@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DONACIBO - Sistema di Gestione</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8f9fa;
+            min-height: 100vh;
+        }
+        .header {
+            background: linear-gradient(135deg, #1e3a5f 0%, #2c5282 100%);
+            color: white;
+            padding: 25px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .header h1 {
+            font-size: 1.6em;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        .header-actions {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn-primary {
+            background: white;
+            color: #1e3a5f;
+            font-weight: 500;
+        }
+        .btn-primary:hover {
+            background: #e8f0fe;
+        }
+        .btn-secondary {
+            background: rgba(255,255,255,0.15);
+            color: white;
+            font-weight: 500;
+        }
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.25);
+        }
+        .container {
+            padding: 30px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .flash-messages {
+            margin-bottom: 20px;
+        }
+        .flash {
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            font-size: 0.95em;
+        }
+        .flash.error {
+            background: #fed7d7;
+            color: #c53030;
+            border: 1px solid #fc8181;
+            border-left: 4px solid #c53030;
+        }
+        .flash.success {
+            background: #c6f6d5;
+            color: #2f855a;
+            border: 1px solid #68d391;
+            border-left: 4px solid #2f855a;
+        }
+        .table-container {
+            background: white;
+            border-radius: 6px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        thead {
+            background: linear-gradient(135deg, #1e3a5f 0%, #2c5282 100%);
+            color: white;
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+            vertical-align: top;
+        }
+        td:first-child {
+            border-left: 3px solid #2c5282;
+        }
+        th {
+            font-weight: 600;
+            font-size: 0.85em;
+            text-transform: uppercase;
+            letter-spacing: 0.75px;
+            color: #f8f9fa;
+        }
+        tbody tr:hover {
+            background: #e8f4f8;
+        }
+        tbody tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+        tbody tr:nth-child(odd) {
+            background: #ffffff;
+        }
+        .editable-field {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #cbd5e0;
+            border-radius: 4px;
+            font-size: 0.9em;
+            background: #ffffff;
+            transition: all 0.2s;
+        }
+        .editable-field:focus {
+            outline: none;
+            border-color: #3498db;
+            background: #f0f8ff;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+        .editable-field[type="number"] {
+            width: 80px;
+        }
+        .editable-field[type="text"] {
+            width: 120px;
+        }
+        select.editable-field {
+            width: 70px;
+        }
+        .checkbox-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+        .checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .checkbox-field {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: #3498db;
+        }
+        .btn-small-note {
+            background: #e2e8f0;
+            color: #4a5568;
+            padding: 3px 8px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75em;
+            margin-left: 5px;
+            font-weight: 500;
+        }
+        .btn-small-note:hover {
+            background: #cbd5e0;
+        }
+        .btn-small-note.has-note {
+            background: #27ae60;
+            color: white;
+        }
+        .btn-small-note.has-note:hover {
+            background: #219150;
+        }
+        .btn-note {
+            background: #ffc107;
+            color: #333;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8em;
+            margin-top: 5px;
+        }
+        .btn-note:hover {
+            background: #e0a800;
+        }
+        .note-modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        .note-modal-content {
+            background-color: white;
+            margin: 10% auto;
+            padding: 30px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        .note-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #1e3a5f;
+        }
+        .note-modal-header h3 {
+            color: #1e3a5f;
+            margin: 0;
+            font-weight: 600;
+        }
+        .note-textarea {
+            width: 100%;
+            min-height: 150px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-family: inherit;
+            font-size: 1em;
+            resize: vertical;
+        }
+        .note-textarea:focus {
+            outline: none;
+            border-color: #1e3a5f;
+            box-shadow: 0 0 0 2px rgba(30, 58, 95, 0.1);
+        }
+        .note-modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .btn-save-note {
+            background: #2c5282;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .btn-save-note:hover {
+            background: #1e3a5f;
+        }
+        .btn-cancel-note {
+            background: #718096;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .btn-cancel-note:hover {
+            background: #4a5568;
+        }
+        .actions {
+            display: flex;
+            gap: 10px;
+        }
+        .btn-save {
+            background: #27ae60;
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: 500;
+        }
+        .btn-save:hover {
+            background: #219150;
+        }
+        .btn-details {
+            background: #3498db;
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: 500;
+        }
+        .btn-details:hover {
+            background: #2980b9;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #1e3a5f;
+        }
+        .modal-header h2 {
+            color: #1e3a5f;
+            margin: 0;
+            font-weight: 600;
+        }
+        .close {
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 1;
+        }
+        .close:hover {
+            color: #333;
+        }
+        .detail-row {
+            display: flex;
+            margin-bottom: 15px;
+            padding: 12px;
+            background: #f7fafc;
+            border-radius: 4px;
+            border-left: 3px solid #1e3a5f;
+        }
+        .detail-label {
+            font-weight: 600;
+            color: #1e3a5f;
+            width: 180px;
+            flex-shrink: 0;
+        }
+        .detail-value {
+            color: #4a5568;
+            flex-grow: 1;
+        }
+        .empty-state {
+            padding: 60px;
+            text-align: center;
+            color: #718096;
+        }
+        .empty-state h3 {
+            margin-bottom: 10px;
+            color: #1e3a5f;
+            font-weight: 600;
+        }
+        .user-info {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+        .filter-section {
+            background: white;
+            padding: 20px;
+            border-radius: 6px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            border: 1px solid #e2e8f0;
+        }
+        .filter-section > div {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .filter-section label {
+            font-weight: 600;
+            color: #1e3a5f;
+            white-space: nowrap;
+        }
+        .filter-section input {
+            padding: 10px;
+            border: 1px solid #cbd5e0;
+            border-radius: 4px;
+            font-size: 0.9em;
+            background: #f8f9fa;
+        }
+        .filter-section input:focus {
+            outline: none;
+            border-color: #1e3a5f;
+            background: white;
+            box-shadow: 0 0 0 2px rgba(30, 58, 95, 0.1);
+        }
+        .filter-section form {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .btn-filter {
+            background: #1e3a5f;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+        .btn-filter:hover {
+            background: #2c5282;
+        }
+        .btn-clear {
+            background: #718096;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+        .btn-clear:hover {
+            background: #4a5568;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <img src="{{ url_for('static', filename='logo.svg') }}" alt="Donacibo Logo" style="width: 50px; height: 50px;">
+            <h1>DONACIBO</h1>
+        </div>
+        <div class="header-actions">
+            <span class="user-info">{{ current_user.username }} ({{ current_user.role }})</span>
+            {% if is_admin %}
+            <a href="{{ url_for('upload') }}" class="btn btn-primary">Carica File</a>
+            {% endif %}
+            <a href="{{ url_for('logout') }}" class="btn btn-secondary">Logout</a>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="flash-messages">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="flash {{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+        
+        <div class="filter-section">
+            <div>
+                <label for="filterIstituto">Filtra per Istituto:</label>
+                <input type="text" id="filterIstituto" placeholder="Digita il nome dell'istituto..." onkeyup="filterTable()">
+                <button class="btn-filter" onclick="filterTable()">🔍 Filtra</button>
+                <button class="btn-clear" onclick="clearFilter()">Cancella</button>
+            </div>
+            <form action="{{ url_for('generate_report') }}" method="POST">
+                <label for="reportFilter">Filtro Report:</label>
+                <input type="text" id="reportFilter" name="filter_text" placeholder="Testo da cercare nei campi...">
+                <button type="submit" class="btn-filter">� Report PDF</button>
+            </form>
+        </div>
+        
+        <div class="table-container">
+            {% if schede %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Istituto</th>
+                        <th>Scuola</th>
+                        <th>Grado</th>
+                        <th>N° Presentazioni</th>
+                        <th>Consegna Materiale</th>
+                        <th>Presentazioni</th>
+                        <th>Ritiro Pacchi</th>
+                        <th>Kg Raccolti</th>
+                        <th>Dettagli</th>
+                        <th>Azioni</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for scheda in schede %}
+                    <form action="{{ url_for('update_scheda', id=scheda.id) }}" method="POST" class="row-form">
+                    <tr data-istituto="{{ scheda.nome_istituto }}">
+                        <td>{{ scheda.nome_istituto }}</td>
+                        <td>{{ scheda.nome_scuola }}</td>
+                        <td>{{ scheda.grado }}</td>
+                        <td>
+                            <input type="number" 
+                                   class="editable-field" 
+                                   name="numero_presentazioni" 
+                                   value="{{ scheda.numero_presentazioni }}"
+                                   min="0">
+                        </td>
+                        <td>
+                            <input type="text" 
+                                   class="editable-field" 
+                                   name="consegna_materiale" 
+                                   value="{{ scheda.consegna_materiale if scheda.consegna_materiale and scheda.consegna_materiale != 'nan' else '' }}"
+                                   placeholder="Inserisci testo">
+                            <div class="checkbox-container">
+                                <div class="checkbox-wrapper">
+                                    <input type="checkbox" 
+                                           class="checkbox-field" 
+                                           name="consegna_materiale_check" 
+                                           {% if scheda.field_note_consegna_materiale.checkbox_value %}checked{% endif %}>
+                                    <button type="button" 
+                                            class="btn-small-note {% if scheda.field_note_consegna_materiale.note %}has-note{% endif %}" 
+                                            data-scheda-id="{{ scheda.id }}"
+                                            data-field-name="consegna_materiale"
+                                            data-note="{{ scheda.field_note_consegna_materiale.note if scheda.field_note_consegna_materiale.note else '' }}"
+                                            onclick="openFieldNoteModal(this)">📝</button>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <input type="text" 
+                                   class="editable-field" 
+                                   name="presentazioni" 
+                                   value="{{ scheda.presentazioni if scheda.presentazioni and scheda.presentazioni != 'nan' else '' }}"
+                                   placeholder="Inserisci testo">
+                            <div class="checkbox-container">
+                                <div class="checkbox-wrapper">
+                                    <input type="checkbox" 
+                                           class="checkbox-field" 
+                                           name="presentazioni_check" 
+                                           {% if scheda.field_note_presentazioni.checkbox_value %}checked{% endif %}>
+                                    <button type="button" 
+                                            class="btn-small-note {% if scheda.field_note_presentazioni.note %}has-note{% endif %}" 
+                                            data-scheda-id="{{ scheda.id }}"
+                                            data-field-name="presentazioni"
+                                            data-note="{{ scheda.field_note_presentazioni.note if scheda.field_note_presentazioni.note else '' }}"
+                                            onclick="openFieldNoteModal(this)">📝</button>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <input type="text" 
+                                   class="editable-field" 
+                                   name="ritiro_pacchi" 
+                                   value="{{ scheda.ritiro_pacchi if scheda.ritiro_pacchi and scheda.ritiro_pacchi != 'nan' else '' }}"
+                                   placeholder="Inserisci testo">
+                            <div class="checkbox-container">
+                                <div class="checkbox-wrapper">
+                                    <input type="checkbox" 
+                                           class="checkbox-field" 
+                                           name="ritiro_pacchi_check" 
+                                           {% if scheda.field_note_ritiro_pacchi.checkbox_value %}checked{% endif %}>
+                                    <button type="button" 
+                                            class="btn-small-note {% if scheda.field_note_ritiro_pacchi.note %}has-note{% endif %}" 
+                                            data-scheda-id="{{ scheda.id }}"
+                                            data-field-name="ritiro_pacchi"
+                                            data-note="{{ scheda.field_note_ritiro_pacchi.note if scheda.field_note_ritiro_pacchi.note else '' }}"
+                                            onclick="openFieldNoteModal(this)">📝</button>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <input type="number" 
+                                   class="editable-field" 
+                                   name="kg_raccolti" 
+                                   value="{{ scheda.kg_raccolti }}"
+                                   step="0.1"
+                                   min="0">
+                        </td>
+                        <td>
+                            <button type="button" class="btn-details" onclick="openModal({{ scheda.id }})">📋 Dettagli</button>
+                        </td>
+                        <td>
+                            <button type="submit" class="btn-save">Salva</button>
+                        </td>
+                    </tr>
+                    </form>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">
+                <h3>Nessun dato disponibile</h3>
+                <p>{% if is_admin %}Carica un file Excel o CSV per importare i dati delle schede di adesione{% else %}Contatta l'amministratore di sistema per caricare i dati{% endif %}</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Modal -->
+    <div id="detailModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Dettagli Scheda Adesione</h2>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+            <div id="modalBody">
+                <!-- Content will be loaded dynamically -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Field Note Modal -->
+    <div id="fieldNoteModal" class="note-modal">
+        <div class="note-modal-content">
+            <div class="note-modal-header">
+                <h3 id="fieldNoteTitle">Gestione Note Campo</h3>
+                <span class="close" onclick="closeFieldNoteModal()">&times;</span>
+            </div>
+            <form id="fieldNoteForm" action="" method="POST">
+                <div class="form-group">
+                    <label for="fieldNoteText">Note:</label>
+                    <textarea id="fieldNoteText" name="note" class="note-textarea" placeholder="Inserisci le note qui..."></textarea>
+                </div>
+                <div class="note-modal-footer">
+                    <button type="button" class="btn-cancel-note" onclick="closeFieldNoteModal()">Annulla</button>
+                    <button type="submit" class="btn-save-note">Salva Note</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        // Store schede data for modal
+        const schedeData = {
+            {% for scheda in schede %}
+            {{ scheda.id }}: {
+                nome_cognome_referente: "{{ scheda.nome_cognome_referente }}",
+                telefono_email: "{{ scheda.telefono_email }}",
+                indirizzo: "{{ scheda.indirizzo }}",
+                comune: "{{ scheda.comune }}",
+                data_inizio_raccolta: "{{ scheda.data_inizio_raccolta.strftime('%d/%m/%Y') if scheda.data_inizio_raccolta else 'N/A' }}",
+                numero_alunni: "{{ scheda.numero_alunni if scheda.numero_alunni else 'N/A' }}",
+                note: "{{ scheda.note if scheda.note else '' }}",
+                numero_presentazioni: "{{ scheda.numero_presentazioni }}"
+            },
+            {% endfor %}
+        };
+        
+        function openModal(id) {
+            const data = schedeData[id];
+            if (!data) return;
+            
+            const modalBody = document.getElementById('modalBody');
+            modalBody.innerHTML = `
+                <div class="detail-row">
+                    <div class="detail-label">Nome e Cognome Referente:</div>
+                    <div class="detail-value">${data.nome_cognome_referente}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Telefono / Email:</div>
+                    <div class="detail-value">${data.telefono_email}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Indirizzo:</div>
+                    <div class="detail-value">${data.indirizzo}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Comune:</div>
+                    <div class="detail-value">${data.comune}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Data Inizio Raccolta:</div>
+                    <div class="detail-value">${data.data_inizio_raccolta}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Numero Alunni:</div>
+                    <div class="detail-value">${data.numero_alunni}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Note:</div>
+                    <div class="detail-value">${data.note || 'Nessuna nota'}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Numero Presentazioni:</div>
+                    <div class="detail-value">${data.numero_presentazioni}</div>
+                </div>
+            `;
+            
+            document.getElementById('detailModal').style.display = 'block';
+        }
+        
+        function closeModal() {
+            document.getElementById('detailModal').style.display = 'none';
+        }
+        
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('detailModal');
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        }
+        
+        // Filter table by istituto
+        function filterTable() {
+            const filterValue = document.getElementById('filterIstituto').value.toLowerCase();
+            const rows = document.querySelectorAll('tbody tr');
+            
+            rows.forEach(row => {
+                const istituto = row.getAttribute('data-istituto');
+                if (istituto) {
+                    const istitutoLower = istituto.toLowerCase();
+                    if (istitutoLower.includes(filterValue)) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                }
+            });
+        }
+        
+        // Clear filter
+        function clearFilter() {
+            document.getElementById('filterIstituto').value = '';
+            const rows = document.querySelectorAll('tbody tr');
+            rows.forEach(row => {
+                row.style.display = '';
+            });
+        }
+        
+        // Field note modal functions
+        function openFieldNoteModal(button) {
+            const id = button.getAttribute('data-scheda-id');
+            const fieldName = button.getAttribute('data-field-name');
+            const currentNote = button.getAttribute('data-note');
+            
+            const fieldNoteModal = document.getElementById('fieldNoteModal');
+            const fieldNoteForm = document.getElementById('fieldNoteForm');
+            const fieldNoteText = document.getElementById('fieldNoteText');
+            const fieldNoteTitle = document.getElementById('fieldNoteTitle');
+            
+            const fieldLabels = {
+                'consegna_materiale': 'Consegna Materiale',
+                'presentazioni': 'Presentazioni',
+                'ritiro_pacchi': 'Ritiro Pacchi'
+            };
+            
+            fieldNoteTitle.textContent = `Gestione Note - ${fieldLabels[fieldName]}`;
+            fieldNoteForm.action = `/update_field_note/${id}/${fieldName}`;
+            fieldNoteText.value = currentNote;
+            fieldNoteModal.style.display = 'block';
+        }
+        
+        function closeFieldNoteModal() {
+            document.getElementById('fieldNoteModal').style.display = 'none';
+        }
+        
+        // Close field note modal when clicking outside
+        window.onclick = function(event) {
+            const fieldNoteModal = document.getElementById('fieldNoteModal');
+            if (event.target == fieldNoteModal) {
+                fieldNoteModal.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

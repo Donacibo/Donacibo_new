@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DONACIBO - Importazione Dati</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8f9fa;
+            min-height: 100vh;
+        }
+        .header {
+            background: linear-gradient(135deg, #1e3a5f 0%, #2c5282 100%);
+            color: white;
+            padding: 25px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .header h1 {
+            font-size: 1.6em;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        .header-actions {
+            display: flex;
+            gap: 15px;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn-primary {
+            background: white;
+            color: #1e3a5f;
+            font-weight: 500;
+        }
+        .btn-primary:hover {
+            background: #e8f0fe;
+        }
+        .btn-secondary {
+            background: rgba(255,255,255,0.15);
+            color: white;
+            font-weight: 500;
+        }
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.25);
+        }
+        .container {
+            padding: 30px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .upload-card {
+            background: white;
+            border-radius: 6px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            padding: 40px;
+            border: 1px solid #e2e8f0;
+        }
+        .upload-card h2 {
+            margin-bottom: 20px;
+            color: #1e3a5f;
+            font-weight: 600;
+        }
+        .upload-card p {
+            color: #4a5568;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+        .form-group {
+            margin-bottom: 25px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 10px;
+            color: #1e3a5f;
+            font-weight: 600;
+        }
+        .file-upload {
+            border: 2px dashed #cbd5e0;
+            border-radius: 6px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.3s, background 0.3s;
+            background: #f8f9fa;
+        }
+        .file-upload:hover {
+            border-color: #1e3a5f;
+            background: #f7fafc;
+        }
+        .file-upload input[type="file"] {
+            display: none;
+        }
+        .file-upload-icon {
+            font-size: 48px;
+            color: #1e3a5f;
+            margin-bottom: 15px;
+        }
+        .file-upload-text {
+            color: #4a5568;
+            font-size: 1.1em;
+            font-weight: 500;
+        }
+        .file-upload-subtext {
+            color: #718096;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+        .btn-submit {
+            width: 100%;
+            padding: 15px;
+            background: #1e3a5f;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background 0.3s;
+            font-weight: 500;
+        }
+        .btn-submit:hover {
+            background: #2c5282;
+        }
+        .flash-messages {
+            margin-bottom: 20px;
+        }
+        .flash {
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            font-size: 0.95em;
+        }
+        .flash.error {
+            background: #fed7d7;
+            color: #c53030;
+            border: 1px solid #fc8181;
+            border-left: 4px solid #c53030;
+        }
+        .flash.success {
+            background: #c6f6d5;
+            color: #2f855a;
+            border: 1px solid #68d391;
+            border-left: 4px solid #2f855a;
+        }
+        .file-info {
+            margin-top: 15px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            display: none;
+        }
+        .file-info.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <img src="{{ url_for('static', filename='logo.svg') }}" alt="Donacibo Logo" style="width: 50px; height: 50px;">
+            <h1>DONACIBO</h1>
+        </div>
+        <div class="header-actions">
+            <a href="{{ url_for('dashboard') }}" class="btn btn-primary">Dashboard</a>
+            <a href="{{ url_for('logout') }}" class="btn btn-secondary">Logout</a>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="flash-messages">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="flash {{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+        
+        <div class="upload-card">
+            <h2>Carica File Schede Adesioni</h2>
+            <p>Carica un file Excel (.xlsx, .xls) o CSV contenente i dati delle schede di adesione. Il file deve contenere le seguenti colonne: nome e cognome referente, telefono / email, nome istituto, nome scuola, grado, indirizzo, comune, data inizio raccolta, numero alunni, note, numero presentazioni, consegna materiale, presentazioni, ritiro pacchi, kg raccolti.</p>
+            
+            <form method="POST" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label>Seleziona File</label>
+                    <div class="file-upload" onclick="document.getElementById('file').click()">
+                        <div class="file-upload-icon">📁</div>
+                        <div class="file-upload-text">Clicca per selezionare un file</div>
+                        <div class="file-upload-subtext">Formati supportati: .xlsx, .xls, .csv</div>
+                        <input type="file" id="file" name="file" accept=".xlsx,.xls,.csv" onchange="showFileInfo(this)">
+                    </div>
+                    <div id="fileInfo" class="file-info"></div>
+                </div>
+                
+                <button type="submit" class="btn-submit">Carica File</button>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        function showFileInfo(input) {
+            const fileInfo = document.getElementById('fileInfo');
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                fileInfo.innerHTML = `
+                    <strong>File selezionato:</strong> ${file.name}<br>
+                    <strong>Dimensione:</strong> ${(file.size / 1024).toFixed(2)} KB<br>
+                    <strong>Tipo:</strong> ${file.type || 'N/A'}
+                `;
+                fileInfo.classList.add('show');
+            } else {
+                fileInfo.classList.remove('show');
+            }
+        }
+    </script>
+</body>
+</html>
