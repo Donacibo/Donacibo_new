@@ -39,7 +39,8 @@ class SchedaAdesione(db.Model):
     indirizzo = db.Column(db.String(300), nullable=False)
     comune = db.Column(db.String(100), nullable=False)
     data_inizio_raccolta = db.Column(db.Date, nullable=True)
-    numero_alunni = db.Column(db.Integer, nullable=True)
+    numero_classi_partecipanti = db.Column(db.Integer, nullable=True)
+    numero_alunni_partecipanti = db.Column(db.Integer, nullable=True)
     note = db.Column(db.Text, nullable=True)
     numero_presentazioni = db.Column(db.Integer, default=0)
     consegna_materiale = db.Column(db.String(100), default='')
@@ -130,22 +131,19 @@ def upload():
                 else:
                     df = pd.read_excel(file)
                 
-                # Clear existing data
-                SchedaAdesione.query.delete()
-                db.session.commit()
-                
-                # Insert new data
+                # Insert new data (append to existing)
                 for _, row in df.iterrows():
                     scheda = SchedaAdesione(
                         nome_cognome_referente=row.get('nome e cognome referente', ''),
-                        telefono_email=row.get('telefono / email', ''),
+                        telefono_email=row.get('telefono / email del referente', ''),
                         nome_istituto=row.get('nome istituto', ''),
                         nome_scuola=row.get('nome scuola', ''),
                         grado=row.get('grado', ''),
                         indirizzo=row.get('indirizzo', ''),
                         comune=row.get('comune', ''),
                         data_inizio_raccolta=pd.to_datetime(row.get('data inizio raccolta')).date() if pd.notna(row.get('data inizio raccolta')) else None,
-                        numero_alunni=int(row.get('numero alunni', 0)) if pd.notna(row.get('numero alunni')) else None,
+                        numero_classi_partecipanti=int(row.get('numero classi aderenti al progetto', 0)) if pd.notna(row.get('numero classi aderenti al progetto')) else None,
+                        numero_alunni_partecipanti=int(row.get('numero alunni partecipanti', 0)) if pd.notna(row.get('numero alunni partecipanti')) else None,
                         note=row.get('note', ''),
                         numero_presentazioni=int(row.get('numero presentazioni', 0)) if pd.notna(row.get('numero presentazioni')) else 0,
                         consegna_materiale=str(row.get('consegna materiale', '')) if pd.notna(row.get('consegna materiale')) and str(row.get('consegna materiale', '')).lower() != 'nan' else '',
@@ -203,7 +201,8 @@ def get_scheda_details(id):
         'indirizzo': scheda.indirizzo,
         'comune': scheda.comune,
         'data_inizio_raccolta': scheda.data_inizio_raccolta.strftime('%d/%m/%Y') if scheda.data_inizio_raccolta else 'N/A',
-        'numero_alunni': scheda.numero_alunni if scheda.numero_alunni else 'N/A',
+        'numero_classi_partecipanti': scheda.numero_classi_partecipanti if scheda.numero_classi_partecipanti else 'N/A',
+        'numero_alunni_partecipanti': scheda.numero_alunni_partecipanti if scheda.numero_alunni_partecipanti else 'N/A',
         'note': scheda.note if scheda.note else '',
         'numero_presentazioni': scheda.numero_presentazioni
     })
@@ -233,6 +232,19 @@ def update_field_note(id, field_name):
     field_note.note = note_content
     db.session.commit()
     flash('Nota campo aggiornata con successo!', 'success')
+    return redirect(url_for('dashboard'))
+
+@app.route('/delete/<int:id>', methods=['POST'])
+@login_required
+def delete_scheda(id):
+    if current_user.role != 'admin':
+        flash('Accesso negato. Solo gli amministratori possono eliminare schede.', 'error')
+        return redirect(url_for('dashboard'))
+    
+    scheda = SchedaAdesione.query.get_or_404(id)
+    db.session.delete(scheda)
+    db.session.commit()
+    flash('Scheda eliminata con successo!', 'success')
     return redirect(url_for('dashboard'))
 
 @app.route('/report', methods=['GET', 'POST'])
@@ -279,7 +291,7 @@ def generate_report():
     
     # Table data
     table_data = [
-        ['Istituto', 'Scuola', 'Grado', 'Consegna Materiale', 'Presentazioni', 'Ritiro Pacchi']
+        ['Istituto', 'Scuola', 'Grado', 'N° Presentazioni', 'Consegna Materiale', 'Presentazioni', 'Ritiro Pacchi']
     ]
     
     for scheda in schede:
@@ -292,13 +304,14 @@ def generate_report():
             scheda.nome_istituto,
             scheda.nome_scuola,
             scheda.grado,
+            scheda.numero_presentazioni,
             consegna_materiale,
             presentazioni,
             ritiro_pacchi
         ])
     
     # Create table
-    table = Table(table_data, colWidths=[2.5*inch, 2*inch, 1*inch, 2*inch, 2*inch, 2*inch])
+    table = Table(table_data, colWidths=[2.5*inch, 2*inch, 1*inch, 1.3*inch, 1.7*inch, 1.7*inch, 1.7*inch])
     table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),

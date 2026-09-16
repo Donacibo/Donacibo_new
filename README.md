@@ -103,14 +103,15 @@ donacibo_project/
 
 Il file di importazione deve contenere le seguenti colonne:
 - nome e cognome referente
-- telefono / email
+- telefono / email del referente
 - nome istituto
 - nome scuola
 - grado
 - indirizzo
 - comune
 - data inizio raccolta
-- numero alunni
+- numero classi aderenti al progetto
+- numero alunni partecipanti
 - note
 - numero presentazioni
 - consegna materiale
