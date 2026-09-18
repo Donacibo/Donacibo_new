@@ -89,6 +89,29 @@ def logout():
     logout_user()
     return redirect(url_for('login'))
 
+@app.route('/admin/password', methods=['GET', 'POST'])
+@login_required
+def manage_passwords():
+    if current_user.role != 'admin':
+        flash('Accesso negato. Solo gli amministratori possono gestire le password.', 'error')
+        return redirect(url_for('dashboard'))
+    
+    if request.method == 'POST':
+        user_id = request.form.get('user_id')
+        new_password = request.form.get('new_password')
+        
+        user = User.query.get(int(user_id)) if user_id else None
+        if user and new_password:
+            user.password_hash = generate_password_hash(new_password)
+            db.session.commit()
+            flash(f'Password aggiornata per {user.username}', 'success')
+        else:
+            flash('Utente o password non validi.', 'error')
+        return redirect(url_for('manage_passwords'))
+    
+    users = User.query.all()
+    return render_template('password.html', users=users)
+
 @app.route('/dashboard')
 @login_required
 def dashboard():

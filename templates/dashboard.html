@@ -495,6 +495,7 @@
             <span class="user-info">{{ current_user.username }} ({{ current_user.role }})</span>
             {% if is_admin %}
             <a href="{{ url_for('upload') }}" class="btn btn-primary">Carica File</a>
+            <a href="{{ url_for('manage_passwords') }}" class="btn btn-primary">Gestione Password</a>
             {% endif %}
             <a href="{{ url_for('logout') }}" class="btn btn-secondary">Logout</a>
         </div>
