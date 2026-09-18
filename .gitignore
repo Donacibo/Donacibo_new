@@ -54,4 +54,6 @@ Thumbs.db
 .env.local
 
 # Development configuration
-.devin/
+.devin/*.db
+*.sqlite3
+instance/

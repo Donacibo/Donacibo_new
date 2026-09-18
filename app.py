@@ -14,7 +14,11 @@ import io
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'donacibo-secret-key-2024'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///donacibo.db'
+# Trova la cartella esatta in cui si trova questo file app.py
+basedir = os.path.abspath(os.path.dirname(__file__))
+
+# Configura il database usando il percorso assoluto
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'database.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
@@ -74,13 +78,13 @@ def login():
         username = request.form['username']
         password = request.form['password']
         user = User.query.filter_by(username=username).first()
-        
+
         if user and check_password_hash(user.password_hash, password):
             login_user(user)
             return redirect(url_for('dashboard'))
         else:
             flash('Credenziali non valide', 'error')
-    
+
     return render_template('login.html')
 
 @app.route('/logout')
@@ -95,11 +99,11 @@ def manage_passwords():
     if current_user.role != 'admin':
         flash('Accesso negato. Solo gli amministratori possono gestire le password.', 'error')
         return redirect(url_for('dashboard'))
-    
+
     if request.method == 'POST':
         user_id = request.form.get('user_id')
         new_password = request.form.get('new_password')
-        
+
         user = User.query.get(int(user_id)) if user_id else None
         if user and new_password:
             user.password_hash = generate_password_hash(new_password)
@@ -108,7 +112,7 @@ def manage_passwords():
         else:
             flash('Utente o password non validi.', 'error')
         return redirect(url_for('manage_passwords'))
-    
+
     users = User.query.all()
     return render_template('password.html', users=users)
 
@@ -135,17 +139,17 @@ def upload():
     if current_user.role != 'admin':
         flash('Accesso negato. Solo gli amministratori possono caricare file.', 'error')
         return redirect(url_for('dashboard'))
-    
+
     if request.method == 'POST':
         if 'file' not in request.files:
             flash('Nessun file selezionato', 'error')
             return redirect(request.url)
-        
+
         file = request.files['file']
         if file.filename == '':
             flash('Nessun file selezionato', 'error')
             return redirect(request.url)
-        
+
         if file and file.filename.endswith(('.xlsx', '.xls', '.csv')):
             try:
                 # Read file with pandas
@@ -153,7 +157,7 @@ def upload():
                     df = pd.read_csv(file)
                 else:
                     df = pd.read_excel(file)
-                
+
                 # Insert new data (append to existing)
                 for _, row in df.iterrows():
                     scheda = SchedaAdesione(
@@ -175,41 +179,41 @@ def upload():
                         kg_raccolti=float(row.get('kg raccolti', 0)) if pd.notna(row.get('kg raccolti')) else 0.0
                     )
                     db.session.add(scheda)
-                
+
                 db.session.commit()
                 flash('File caricato con successo!', 'success')
                 return redirect(url_for('dashboard'))
-                
+
             except Exception as e:
                 db.session.rollback()
                 flash(f'Errore durante il caricamento: {str(e)}', 'error')
         else:
             flash('Formato file non supportato. Usa .xlsx, .xls o .csv', 'error')
-    
+
     return render_template('upload.html')
 
 @app.route('/update/<int:id>', methods=['POST'])
 @login_required
 def update_scheda(id):
     scheda = SchedaAdesione.query.get_or_404(id)
-    
+
     # Update editable fields
     scheda.numero_presentazioni = int(request.form.get('numero_presentazioni', 0))
     scheda.consegna_materiale = request.form.get('consegna_materiale', '')
     scheda.presentazioni = request.form.get('presentazioni', '')
     scheda.ritiro_pacchi = request.form.get('ritiro_pacchi', '')
     scheda.kg_raccolti = float(request.form.get('kg_raccolti', 0))
-    
+
     # Update field notes and checkboxes in the separate table
     for field_name in ['consegna_materiale', 'presentazioni', 'ritiro_pacchi']:
         field_note = FieldNote.query.filter_by(scheda_id=id, field_name=field_name).first()
         if not field_note:
             field_note = FieldNote(scheda_id=id, field_name=field_name)
             db.session.add(field_note)
-        
+
         checkbox_value = f'{field_name}_check' in request.form
         field_note.checkbox_value = checkbox_value
-    
+
     db.session.commit()
     flash('Dati aggiornati con successo!', 'success')
     return redirect(url_for('dashboard'))
@@ -243,15 +247,15 @@ def update_note(id):
 @login_required
 def update_field_note(id, field_name):
     scheda = SchedaAdesione.query.get_or_404(id)
-    
+
     note_content = request.form.get('note', '')
-    
+
     # Find or create the field note record
     field_note = FieldNote.query.filter_by(scheda_id=id, field_name=field_name).first()
     if not field_note:
         field_note = FieldNote(scheda_id=id, field_name=field_name)
         db.session.add(field_note)
-    
+
     field_note.note = note_content
     db.session.commit()
     flash('Nota campo aggiornata con successo!', 'success')
@@ -263,7 +267,7 @@ def delete_scheda(id):
     if current_user.role != 'admin':
         flash('Accesso negato. Solo gli amministratori possono eliminare schede.', 'error')
         return redirect(url_for('dashboard'))
-    
+
     scheda = SchedaAdesione.query.get_or_404(id)
     db.session.delete(scheda)
     db.session.commit()
@@ -274,10 +278,10 @@ def delete_scheda(id):
 @login_required
 def generate_report():
     filter_text = request.form.get('filter_text', '').strip() if request.method == 'POST' else request.args.get('filter_text', '').strip()
-    
+
     # Get all schede
     schede = SchedaAdesione.query.all()
-    
+
     # Apply filter if provided
     if filter_text:
         filtered_schede = []
@@ -288,41 +292,41 @@ def generate_report():
                 field_note = FieldNote.query.filter_by(scheda_id=scheda.id, field_name=field_name).first()
                 if field_note:
                     field_notes[field_name] = scheda.__dict__.get(field_name, '')
-            
+
             # Check if any of the fields match the filter
             if (filter_text.lower() in field_notes.get('consegna_materiale', '').lower() or
                 filter_text.lower() in field_notes.get('presentazioni', '').lower() or
                 filter_text.lower() in field_notes.get('ritiro_pacchi', '').lower()):
                 filtered_schede.append(scheda)
         schede = filtered_schede
-    
+
     # Generate PDF
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=landscape(A4))
     elements = []
-    
+
     # Title
     styles = getSampleStyleSheet()
     title = Paragraph(f"Report DONACIBO - {datetime.now().strftime('%d/%m/%Y')}", styles['Title'])
     elements.append(title)
-    
+
     if filter_text:
         filter_paragraph = Paragraph(f"Filtro: {filter_text}", styles['Normal'])
         elements.append(filter_paragraph)
-    
+
     elements.append(Paragraph("<br/>", styles['Normal']))
-    
+
     # Table data
     table_data = [
         ['Istituto', 'Scuola', 'Grado', 'N° Presentazioni', 'Consegna Materiale', 'Presentazioni', 'Ritiro Pacchi']
     ]
-    
+
     for scheda in schede:
         # Get field values
         consegna_materiale = scheda.consegna_materiale or ''
         presentazioni = scheda.presentazioni or ''
         ritiro_pacchi = scheda.ritiro_pacchi or ''
-        
+
         table_data.append([
             scheda.nome_istituto,
             scheda.nome_scuola,
@@ -332,7 +336,7 @@ def generate_report():
             presentazioni,
             ritiro_pacchi
         ])
-    
+
     # Create table
     table = Table(table_data, colWidths=[2.5*inch, 2*inch, 1*inch, 1.3*inch, 1.7*inch, 1.7*inch, 1.7*inch])
     table.setStyle(TableStyle([
@@ -346,13 +350,13 @@ def generate_report():
         ('GRID', (0, 0), (-1, -1), 1, colors.black),
         ('FONTSIZE', (0, 1), (-1, -1), 8),
     ]))
-    
+
     elements.append(table)
-    
+
     # Build PDF
     doc.build(elements)
     buffer.seek(0)
-    
+
     return send_file(
         buffer,
         as_attachment=True,
@@ -363,7 +367,7 @@ def generate_report():
 def init_db():
     with app.app_context():
         db.create_all()
-        
+
         # Create default users if they don't exist
         if not User.query.filter_by(username='admin').first():
             admin = User(
@@ -372,7 +376,7 @@ def init_db():
                 role='admin'
             )
             db.session.add(admin)
-        
+
         if not User.query.filter_by(username='volontario').first():
             volontario = User(
                 username='volontario',
@@ -380,7 +384,7 @@ def init_db():
                 role='volontario'
             )
             db.session.add(volontario)
-        
+
         db.session.commit()
 
 if __name__ == '__main__':
